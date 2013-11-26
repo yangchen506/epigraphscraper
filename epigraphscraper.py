@@ -1,21 +1,5 @@
 
-#--------------------------------------------------------------------------------
-#READ THIS FIRST BEFORE USING!!
-#This script pulls all author entries & epigraphs from all the XML
-#files in a directory in which this program is executed.
-#(1) Include  ONLY XML files in the directory you want to 
-#strip for data *disaster unmitigated* may occur.
-#(2) DO NOT include any subfolders. 
-#(3) The current working directory of your terminal needs to be the 
-#same directory that your script it is! 
-#(4) This file best viewed with truncated (i.e., not word wrapped) lines
-#(5) This script was written and tested on OS X. It'll probably work in unix.
-#I haven't tested it. No promises. 
-#---------------------------------------------------------------------------------
-
-#Wish list------------------------------------------------------------------------
-#(1) need to grab all the other attributes like title, year, etc.
-#(2) output to a csv file
+#see readme file before using! 
 
 #libraries & Global variables ----------------------------------------------------
 from bs4 import BeautifulSoup
@@ -23,15 +7,14 @@ from os import walk, getcwd, listdir
 from os.path import isfile, join
 import os
 import csv
-
 totalEpigraphCount = 0
 epigraphlessFileCount = 0
-out = csv.writer(open("epigraph.csv","wb"), delimiter='\t',quoting=csv.QUOTE_MINIMAL)
+#out = csv.writer(open("epigraph.csv","wb"), delimiter='\t',quoting=csv.QUOTE_MINIMAL)
 
 #get only files from directory & loop through each file --------------------------
 allFilesInDirectory = [ i for i in listdir(getcwd()) if isfile(join(getcwd(),i)) ]
 
-for x in range(0, len(allFilesInDirectory)):
+for x in xrange(0, len(allFilesInDirectory)):
     root, ext = os.path.splitext(allFilesInDirectory[x])
     if (ext == '.xml'):
        
@@ -40,20 +23,24 @@ for x in range(0, len(allFilesInDirectory)):
        soup = BeautifulSoup(readfile) #make file "soup" object for easy searching
        
     # strip author & epigraphs from individual file-------------------------------
-       numberOfAuthorEntries = len(soup.findAll('author'))	# number of hypertext author entries
-       authorlist = [soup('author')[e].text for e in range(numberOfAuthorEntries)]  #collect "author"s
-       numberOfEpigraphs = len(soup.findAll('epigraph'))    # number of epigraphs in file
-       epigraph = [soup('epigraph')[e].text for e in range(numberOfEpigraphs)]	#collect epigraphs
+       authorlist = [author.text for author in soup('author')]  #collect author entries 
+       epigraphlist = [epigraph.text for epigraph in soup('epigraph')]  #collect epigraphs 
+
+    # close file------------------------------------------------------------------
        readfile.close()
     
-    # print out contents to terminal --------------------------------------------
+    # print out contents to terminal ---------------------------------------------
        if (len(soup.findAll('epigraph')) == 0):
-          #print allFilesInDirectory[x] + ": No epigraphs found."
+          #print allFilesInDirectory[x] + ": No epigraphs found." #Error Test
           epigraphlessFileCount += 1
        else:
-          for i in range(0,len(soup.findAll('epigraph'))):
-             print authorlist[1] + "    " + allFilesInDirectory[x] + "    " + str(i) + "   " + epigraph[i]
-             totalEpigraphCount += 1
+          for i in xrange(0, len(soup.findAll('epigraph'))):
+             if (len(soup.findAll('author')) == 0):
+                 print "Unknown Author" + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " + epigraphlist[i]
+                 totalEpigraphCount += 1
+             else:    
+                 print authorlist[0] + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " + epigraphlist[i]
+                 totalEpigraphCount += 1
 
 print "TOTAl NUMBER OF EPIGRAPHS: " + str(totalEpigraphCount)
 print "TOTAL NUMBER OF FILES: " + str(len(allFilesInDirectory))
