@@ -13,6 +13,6 @@ This script pulls all author entries & epigraphs tagged as <author> and <epigrap
 
 *FEATURES TO ADD*
 
-(1) Will add other attribute grabbing like <title>, <year>, etc. 
+(1) Will add other attribute grabbing like title, year, etc. 
 
 (2) Add ability to output to a csv file instead of a terminal.
