@@ -1,20 +1,37 @@
+# TO DO LIST ---------------------------------------------------------------------
+#(1) Right now script just creates a new file. We should have script check to see if table exists. If it does,
+# it should just append to existing table. 
+#(2) Need to have script collect additional information besides hypertext author, hypertext title, and
+# hypertext epigraph. See "Epigraphs Database" google doc at
+# https://docs.google.com/spreadsheet/ccc?key=0ArWRJQdqro24dDVXRmw4NVZXQkttVXp4MzJlUElRZEE&usp=drive_web#gid=0 
+# --------------------------------------------------------------------------------
 
-#see readme file before using! 
-
-#libraries & Global variables -----------------------------------------------------
+# libraries & global variables ----------------------------------------------------
 from bs4 import BeautifulSoup            #BeautifulSoup parses XML tags.  http://www.crummy.com/software/BeautifulSoup/
 from os import walk, getcwd, listdir     #used to grab all files in directory of script
 from os.path import isfile, join         #also used in grabbing all files in directory
 import os                                
 import csv                               #used to interact with csv files (not yet working)
+import MySQLdb                           #used to interact with MySQL Database
 totalEpigraphCount = 0                   #counts total number of epigraphs in all files in directory
 epigraphlessFileCount = 0                #counts total number of files in directory that do not have epigraphs
+                                       
+#connect to database--------------------------------------------------------------
+db = MySQLdb.connect(host="localhost",         #your host, usually localhost
+                     user="epigraphcollector", #your username
+                     passwd="123456",          #your password
+                     db="epigraphDB")          #database name
+cur = db.cursor()                              #cursor object will let you execute sql commands
+
+#create table in database with three elements--------------------------------------
+Command = "create table Epi(No int not null, Filename varchar(255) not null, Author varchar(255), Epigraph text, primary key(No));"  
+cur.execute(createCommand)
 
 #get list of files in current directory & put it in an array ---------------------
 allFilesInDirectory = [ i for i in listdir(getcwd()) if isfile(join(getcwd(),i)) ]
 
 #scrape epigraphs from all XML files----------------------------------------------
-for x in xrange(0, len(allFilesInDirectory)):                   #loop through all files in directory
+for x in xrange(0, len(allFilesInDirectory)):                   #for loop through all files in directory
     root, ext = os.path.splitext(allFilesInDirectory[x])        #select file extension for particular file "x" in the list "allFilesInDirectory"
     if (ext == '.xml'):                                         #if file ends in ".xml", read file 
        
@@ -29,18 +46,27 @@ for x in xrange(0, len(allFilesInDirectory)):                   #loop through al
     # close file------------------------------------------------------------------
        readfile.close()                                                 #close file "x"
     
-    # calculate statistics & output all information to terminal ------------------
-       if (len(soup.findAll('epigraph')) == 0):                         #check if file has epigraphs and record this                
-          #print allFilesInDirectory[x] + ": No epigraphs found."       #Error Test
-          epigraphlessFileCount += 1
-       else:                                                            #file has epigraphs, print hypertext author, hypertext title, and epigraph to terminal
-          for i in xrange(0, len(soup.findAll('epigraph'))):
+    # record information to terminal & database-----------------------------------
+       if (len(soup.findAll('epigraph')) == 0):                         #check if file has epigraphs                
+          # print allFilesInDirectory[x] + ": No epigraphs found."       #Error Test
+          epigraphlessFileCount += 1                                    #note file did not have epigraph
+       else:
+          # output author, text, line, and epigraph to terminal and database   
+          for i in xrange(0, len(soup.findAll('epigraph'))):          
              if (len(soup.findAll('author')) == 0):
                  print "Unknown Author" + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " + epigraphlist[i]
+                 insertCommand = "insert into Epi values(" + str(i+1) + ", " + "'"+allFilesInDirectory[x] + "'"+"," + "'"+"Unknown Author" + "'"+"," + "'"+ epigraphlist[i] + "'"+");"
+                 cur.execute(insertCommand)
                  totalEpigraphCount += 1
              else:    
                  print authorlist[0] + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " + epigraphlist[i]
+                 insertCommand = "insert into Epi values(" + str(i+1) + ", " + "'"+allFilesInDirectory[x] + "'"+"," + "'"+authorlist[0] + "'"+"," + "'"+ epigraphlist[i] + "'"+");"
+                 cur.execute(insertCommand)
                  totalEpigraphCount += 1
+
+# commit data to DB and close -----------------------------------------------------
+db.commit() 
+db.close()
 
 #Print total number of epigraphs collected to the terminal-------------------------
 print "TOTAl NUMBER OF EPIGRAPHS: " + str(totalEpigraphCount)
