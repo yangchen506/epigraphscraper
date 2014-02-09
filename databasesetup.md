@@ -22,15 +22,15 @@ After that, install the Mysqldb-python lib:
 
 `<enter password when asked>`
 
-`create database MYDB;`
+`create database EPIDB;`
 
 
 *Step 3: Create a user account in the database*
 
-`create user epigraphcollector@localhost' identified by '123456';`
+`create user collector@localhost' identified by '123456';`
 
 (Here you can change, but you need also change the code too)
 
-`grant all privileges on epigraphDB.* to epigraphcollector@localhost;`
+`grant all privileges on EPIDB.* to collector@localhost;`
 
 `quit;`
