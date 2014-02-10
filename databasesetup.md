@@ -18,24 +18,43 @@ After that, install the Mysqldb-python lib:
 
 NOTE: If homebrew and pip are having problems installing packages, it could be that your permissions on OS X need to be fixed. You can easily check and fix your permissions using Apple's "Disk Utility" program.
 
-*Step 2: Start & stop mySQL server* 
+*Step 2: Start & stop mySQL server*
 
-There are a number of ways to start your mysql database:
+There are a number of ways to start your mysql server:
+
 (1) `mysqld` (starts server regardless of OS being used; not preferred)
 
 (2) `mysqld_safe` (tries to predict best sql settings and then starts server; still not preferred)
 
 (3) Use the mysql.server script to start and stop server. Simply type at terminal:
-`mysql.server start' (starts server, preferred)
-`mysql.server stop' (stops server, preferred)    
+
+     `mysql.server start`  (starts server, preferred)
+
+     `mysql.server stop` (stops server, preferred)    
+     
+*Step 3: Creating Users*
+
+When you first start your sql server, you won't have any users. We'll need to add some since you can't do anything in the database except as logged on as a user.
+
+To log on as the root user into MySQL monitor, type
+
+`mysql -uroot -p` (in the terminal command line; the default password is blank)
+
+This will automatically log you in to MySQL monitor (i.e., you will be at the "mysql>" prompt). Now we can create a user account for normal usage by typing:
+
+`CREATE USER 'collector'@'localhost' IDENTIFIED BY '123456';`  (This identifies a user "collector" with a password "123456")
+
+Note that the user and the password must match what is specified by epigrapscraper.py script. Now we need our "collector" account to do stuff to the database so we should 
+
+`GRANT ALL PRIVILEGES ON *.* TO 'collector'@'localhost' WITH GRANT OPTION;`
 
 
-*Step 3: Create a user account in the database*
+*Step 4: Create a database*
 
-`create user collector@localhost' identified by '123456';`
+At "mysql>" prompt and logged on as "root" user, create a database named "EPIDB" by typing
 
-(Here you can change, but you need also change the code too)
+`CREATE DATABASE EPIDB;`
 
-`grant all privileges on EPIDB.* to collector@localhost;`
+You can see all the existing databases on the MySQL server via
 
-`quit;`
+`SHOW DATABASES`
