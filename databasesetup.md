@@ -26,11 +26,11 @@ There are a number of ways to start your mysql server:
 
 (2) `mysqld_safe` (tries to predict best sql settings and then starts server; still not preferred)
 
-(3) Use the mysql.server script to start and stop server. Simply type at terminal:
+(3) Use the mysql.server script to start and stop server. This is the preferred method. Simply type at terminal:
 
-     `mysql.server start`  (starts server, preferred)
+     `mysql.server start`  
 
-     `mysql.server stop` (stops server, preferred)    
+     `mysql.server stop`
      
 *Step 3: Creating Users*
 
@@ -57,4 +57,4 @@ At "mysql>" prompt and logged on as "root" user, create a database named "EPIDB"
 
 You can see all the existing databases on the MySQL server via
 
-`SHOW DATABASES`
+`SHOW DATABASES;`
