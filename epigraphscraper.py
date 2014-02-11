@@ -18,13 +18,13 @@ epigraphlessFileCount = 0                #counts total number of files in direct
                                        
 #connect to database--------------------------------------------------------------
 db = MySQLdb.connect(host="localhost",         #your host, usually localhost
-                     user="epigraphcollector", #your username
+                     user="collector",         #your username
                      passwd="123456",          #your password
-                     db="epigraphDB")          #database name
+                     db="EPIDB")               #database name
 cur = db.cursor()                              #cursor object will let you execute sql commands
 
 #create table in database with three elements--------------------------------------
-Command = "create table Epi(No int not null, Filename varchar(255) not null, Author varchar(255), Epigraph text, primary key(No));"  
+createCommand = "create table Epi(No int not null, Filename varchar(255) not null, Author varchar(255), Epigraph text, primary key(No));"  
 cur.execute(createCommand)
 
 #get list of files in current directory & put it in an array ---------------------
