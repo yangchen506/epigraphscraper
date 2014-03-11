@@ -1,5 +1,5 @@
 
-#see readme file before using! 
+#see readme file before using!
 
 #libraries & Global variables ----------------------------------------------------
 from bs4 import BeautifulSoup
@@ -18,9 +18,9 @@ epigraphlessFileCount = 0
 
 #connect to database -------------------------------------------------------------
 try:
-     db = sqlite3.connect("Epigraph.db")
+    db = sqlite3.connect("Epigraph.db")
 except sqlite3.Error,e:
-     print"Failure to connect the database","\n",e.args[0]
+    print"Failure to connect the database","\n",e.args[0]
 
 # Name of the data base
 # If exists, then open the database; if not, then create it and open it.
@@ -53,68 +53,67 @@ allFilesInDirectory = [ i for i in listdir(getcwd()) if isfile(join(getcwd(),i))
 for x in xrange(0, len(allFilesInDirectory)):
     root, ext = os.path.splitext(allFilesInDirectory[x])
     if (ext == '.xml'):
-       
-    # open file to be read -------------------------------------------------------
-       readfile = open(str(allFilesInDirectory[x]))	#specific file to be examined
-       soup = BeautifulSoup(readfile) #make file "soup" object for easy searching
-       
-    # strip author & epigraphs from individual file-------------------------------
-       authorlist = [author.text for author in soup('author')]  #collect author entries 
-       epigraphlist = [epigraph.text for epigraph in soup('epigraph')]  #collect epigraphs
+        
+        # open file to be read -------------------------------------------------------
+        readfile = open(str(allFilesInDirectory[x]))	#specific file to be examined
+        soup = BeautifulSoup(readfile) #make file "soup" object for easy searching
+        
+        # strip author & epigraphs from individual file-------------------------------
+        authorlist = [author.text for author in soup('author')]  #collect author entries
+        epigraphlist = [epigraph.text for epigraph in soup('epigraph')]  #collect epigraphs
+        
+        # close file------------------------------------------------------------------
+        readfile.close()
+        
+        # print out contents to terminal and database---------------------------------
+        if (len(soup.findAll('epigraph')) == 0):
+            #print allFilesInDirectory[x] + ": No epigraphs found." #Error Test
+            epigraphlessFileCount += 1
+        else:
+            for i in xrange(0, len(soup.findAll('epigraph'))):
+                # save the every sentence in epigraph and save the last sentense into database as epigraph author
+                TheEpigraph=epigraphlist[i].split('\n')
+                NewEpigraph=[]
+                for sentence in TheEpigraph:
+                    if len(sentence)!=0:
+                        NewEpigraph.append(sentence)
+            
+                if len(NewEpigraph)>1:
+                    if u'\u201d' not in NewEpigraph[len(NewEpigraph)-1]:
+                        EpigraphAuthor=NewEpigraph[len(NewEpigraph)-1];
+                    else:
+                        EpigraphAuthor="Unknown Epigraph Author"
+                else:
+                    EpigraphAuthor="Unknown Epigraph Author"
 
-    # close file------------------------------------------------------------------
-       readfile.close()
-    
-    # print out contents to terminal and database---------------------------------
-       if (len(soup.findAll('epigraph')) == 0):
-          #print allFilesInDirectory[x] + ": No epigraphs found." #Error Test
-          epigraphlessFileCount += 1
-       else:
-          for i in xrange(0, len(soup.findAll('epigraph'))):
-              # save the every sentence in epigraph and save the last sentense into database as epigraph author
-             TheEpigraph=epigraphlist[i].split('\n')
-             NewEpigraph=[]
-             for sentence in TheEpigraph:
-                 if len(sentence)!=0:
-                    NewEpigraph.append(sentence)
-          
-             if u'\u201d' not in NewEpigraph[len(NewEpigraph)-1]:
-                 EpigraphAuthor=NewEpigraph[len(NewEpigraph)-1];
-             else:
-                 EpigraphAuthor="Unknown Epigraph Author"
-                 
-                             
-             
-              
-          
-             if (len(soup.findAll('author')) == 0):
-                 print "Unknown Author" + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +EpigraphAuthor+"   "+ epigraphlist[i]
-                 totalEpigraphCount += 1
-                 
-                 # insert into database
-                 insertCommand = "insert into Epi values("+ str(i+1)  +","+"\""+allFilesInDirectory[x] + "\""+"," + "\""+"Unknown Author" + "\""+"," + "\""+ epigraphlist[i] + "\""+"," + "\""+EpigraphAuthor + "\""+");"
-                 
-                 try:
-                     cur.execute(insertCommand)
-                 except sqlite3.Error,e:
-                     print "Failure to insert data.","\n",e.args[0]
-                 
-                 db.commit()
-          
-                 
-             else:    
-                 print authorlist[0] + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +EpigraphAuthor+"   "+ epigraphlist[i]
-                 totalEpigraphCount += 1
-                 
-                 # insert into database
-                 insertCommand = "insert into Epi values("+ str(i+1) + ", " + "\""+allFilesInDirectory[x] + "\""+"," + "\""+authorlist[0] + "\""+"," + "\""+ epigraphlist[i] + "\""+"," + "\""+EpigraphAuthor + "\""+");"
-                 
-                 try:
-                     cur.execute(insertCommand)
-                 except sqlite3.Error,e:
-                     print "Failure to insert data.","\n",e.args[0]
-             
-                 db.commit()
+                if (len(soup.findAll('author')) == 0):
+                    print "Unknown Author" + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +EpigraphAuthor+"   "+ epigraphlist[i]
+                    totalEpigraphCount += 1
+                    
+                    # insert into database
+                    insertCommand = "insert into Epi values (?,?,?,?,?)"
+                    #print insertCommand
+                    try:
+                        cur.execute(insertCommand,(str(i+1),allFilesInDirectory[x],"Unknown Author",epigraphlist[i],EpigraphAuthor))
+                    except sqlite3.Error,e:
+                        print "Failure to insert data.","\n",e.args[0]
+                    
+                    db.commit()
+                
+                
+                else:
+                    print authorlist[0] + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +EpigraphAuthor+"   "+ epigraphlist[i]
+                    totalEpigraphCount += 1
+                    
+                    # insert into database
+                    insertCommand = "insert into Epi values (?,?,?,?,?)"
+                    #print insertCommand
+                    try:
+                        cur.execute(insertCommand,(str(i+1),allFilesInDirectory[x],authorlist[0],epigraphlist[i],EpigraphAuthor))
+                    except sqlite3.Error,e:
+                        print "Failure to insert data.","\n",e.args[0]
+                    
+                    db.commit()
 
 
 
