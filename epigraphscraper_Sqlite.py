@@ -1,4 +1,3 @@
-
 #see readme file before using!
 
 #libraries & Global variables ----------------------------------------------------
@@ -39,7 +38,7 @@ except sqlite3.Error,e:
 db.commit()
 
 
-createCommand = "create table Epi(No integer not null, Filename varchar(255) not null, Author varchar(255), Epigraph text, EpigraphAuthor varchar(255), primary key(No,Filename)) ;"
+createCommand = "create table Epi(No integer not null, Filename varchar(255) not null, Author varchar(255), Epigraph text, HypertextAttribute varchar(255), primary key(No,Filename)) ;"
 try:
     cur.execute(createCommand)
 except sqlite3.Error,e:
@@ -82,9 +81,9 @@ for x in xrange(0, len(allFilesInDirectory)):
                     if u'\u201d' not in NewEpigraph[len(NewEpigraph)-1]:
                         EpigraphAuthor=NewEpigraph[len(NewEpigraph)-1];
                     else:
-                        EpigraphAuthor="Unknown Epigraph Author"
+                        EpigraphAuthor="Unknown Hypertext Attribute"
                 else:
-                    EpigraphAuthor="Unknown Epigraph Author"
+                    EpigraphAuthor="Unknown Hypertext Attribute"
 
                 if (len(soup.findAll('author')) == 0):
                     print "Unknown Author" + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +EpigraphAuthor+"   "+ epigraphlist[i]
