@@ -1,3 +1,4 @@
+
 #see readme file before using!
 
 #libraries & Global variables ----------------------------------------------------
@@ -9,11 +10,11 @@ import csv
 import re
 import sqlite3
 import sys
+import csv
 
-
+care_tags = ['hi', 'bibl', 'signed']
 totalEpigraphCount = 0
 epigraphlessFileCount = 0
-#out = csv.writer(open("epigraph.csv","wb"), delimiter='\t',quoting=csv.QUOTE_MINIMAL)
 
 #connect to database -------------------------------------------------------------
 try:
@@ -38,7 +39,7 @@ except sqlite3.Error,e:
 db.commit()
 
 
-createCommand = "create table Epi(No integer not null, Filename varchar(255) not null, Author varchar(255), Epigraph text, HypertextAttribute varchar(255), primary key(No,Filename)) ;"
+createCommand = "create table Epi(No integer not null, Filename varchar(255) not null, Author varchar(255), Epigraph text, EpigraphAuthor varchar(255), primary key(No,Filename)) ;"
 try:
     cur.execute(createCommand)
 except sqlite3.Error,e:
@@ -60,55 +61,53 @@ for x in xrange(0, len(allFilesInDirectory)):
         # strip author & epigraphs from individual file-------------------------------
         authorlist = [author.text for author in soup('author')]  #collect author entries
         epigraphlist = [epigraph.text for epigraph in soup('epigraph')]  #collect epigraphs
+        epigraphs = soup.find_all( 'epigraph' )  #find all epigraphs
         
         # close file------------------------------------------------------------------
         readfile.close()
-        
+    
         # print out contents to terminal and database---------------------------------
-        if (len(soup.findAll('epigraph')) == 0):
-            #print allFilesInDirectory[x] + ": No epigraphs found." #Error Test
+        if (len(epigraphs) == 0):
             epigraphlessFileCount += 1
         else:
+            # save epigraph author into EpigraphAuthor--------------------------------
+            epigraphAuthors = []
+            for epigraph in epigraphs:
+                FIND = 0
+                for tag_name in care_tags:
+                    tag = epigraph.findChild( name=tag_name )
+                    if tag:
+                        FIND = 1
+                        author_name = tag.get_text().strip()
+                        epigraphAuthors.append( author_name )
+                if not FIND:
+                    epigraphAuthors.append ("Unknown Author")
+        
             for i in xrange(0, len(soup.findAll('epigraph'))):
-                # save the every sentence in epigraph and save the last sentense into database as epigraph author
-                TheEpigraph=epigraphlist[i].split('\n')
-                NewEpigraph=[]
-                for sentence in TheEpigraph:
-                    if len(sentence)!=0:
-                        NewEpigraph.append(sentence)
-            
-                if len(NewEpigraph)>1:
-                    if u'\u201d' not in NewEpigraph[len(NewEpigraph)-1]:
-                        EpigraphAuthor=NewEpigraph[len(NewEpigraph)-1];
-                    else:
-                        EpigraphAuthor="Unknown Hypertext Attribute"
-                else:
-                    EpigraphAuthor="Unknown Hypertext Attribute"
-
+                
                 if (len(soup.findAll('author')) == 0):
-                    print "Unknown Author" + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +EpigraphAuthor+"   "+ epigraphlist[i]
+                    print "Unknown Author" + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +epigraphAuthors[i]+"   "+ epigraphlist[i]
                     totalEpigraphCount += 1
                     
                     # insert into database
                     insertCommand = "insert into Epi values (?,?,?,?,?)"
                     #print insertCommand
                     try:
-                        cur.execute(insertCommand,(str(i+1),allFilesInDirectory[x],"Unknown Author",epigraphlist[i],EpigraphAuthor))
+                        cur.execute(insertCommand,(str(i+1),allFilesInDirectory[x],"Unknown Author",epigraphlist[i],epigraphAuthors[i]))
                     except sqlite3.Error,e:
                         print "Failure to insert data.","\n",e.args[0]
                     
                     db.commit()
                 
-                
                 else:
-                    print authorlist[0] + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +EpigraphAuthor+"   "+ epigraphlist[i]
+                    print authorlist[0] + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +epigraphAuthors[i]+"   "+ epigraphlist[i]
                     totalEpigraphCount += 1
                     
                     # insert into database
                     insertCommand = "insert into Epi values (?,?,?,?,?)"
                     #print insertCommand
                     try:
-                        cur.execute(insertCommand,(str(i+1),allFilesInDirectory[x],authorlist[0],epigraphlist[i],EpigraphAuthor))
+                        cur.execute(insertCommand,(str(i+1),allFilesInDirectory[x],authorlist[0],epigraphlist[i],epigraphAuthors[i]))
                     except sqlite3.Error,e:
                         print "Failure to insert data.","\n",e.args[0]
                     
@@ -160,6 +159,23 @@ for FileIndex in line:
     else:
         print "No such file number: " + str(FileIndex),"\n"
 
+#Export from database into csv file
+data = cur.execute( "SELECT * FROM Epi;")
+
+#with open("epigraph.csv", "wt") as fp:
+#     csv_writer = csv.writer(fp)
+#     #csv_writer.writerow([i[0] for i in data.description]) # write headers
+#     for row in data:
+#      csv_writer.writerow(row)
+
+#del csv_writer # this will close the CSV file
+
+f = open('epigraph.csv', 'w')
+print >> f, "Number in this file, Filename, Author, Epigraph, Hypertext Attributer."
+for row in data:
+    #row = unicode(row[0])+'@'+row[1]+'@'+row[2]+'@'+row[3]+'@'+row[4]
+    print >> f, row
+f.close()
 
 db.close()
 #Notes for future changes--------------------------
