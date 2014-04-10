@@ -10,9 +10,9 @@ import csv
 import re
 import sqlite3
 import sys
-import csv
 
-care_tags = ['hi', 'bibl', 'signed']
+
+care_tags = ['bibl', 'signed']
 totalEpigraphCount = 0
 epigraphlessFileCount = 0
 
@@ -39,7 +39,7 @@ except sqlite3.Error,e:
 db.commit()
 
 
-createCommand = "create table Epi(No integer not null, Filename varchar(255) not null, Author varchar(255), Epigraph text, EpigraphAuthor varchar(255), primary key(No,Filename)) ;"
+createCommand = "create table Epi(No integer not null, Filename varchar(255) not null, Author varchar(255), Epigraph text, EpigraphAuthor varchar(255), Atrribution Found integer, primary key(No,Filename)) ;"
 try:
     cur.execute(createCommand)
 except sqlite3.Error,e:
@@ -72,42 +72,45 @@ for x in xrange(0, len(allFilesInDirectory)):
         else:
             # save epigraph author into EpigraphAuthor--------------------------------
             epigraphAuthors = []
+            FINDs = []
             for epigraph in epigraphs:
                 FIND = 0
                 for tag_name in care_tags:
                     tag = epigraph.findChild( name=tag_name )
                     if tag:
                         FIND = 1
+                        FINDs.append(1)
                         author_name = tag.get_text().strip()
                         epigraphAuthors.append( author_name )
                 if not FIND:
                     epigraphAuthors.append ("Unknown Author")
+                    FINDs.append(0)
         
             for i in xrange(0, len(soup.findAll('epigraph'))):
                 
                 if (len(soup.findAll('author')) == 0):
-                    print "Unknown Author" + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +epigraphAuthors[i]+"   "+ epigraphlist[i]
+                    print "Unknown Author" + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +epigraphAuthors[i]+"   "+ epigraphlist[i]+str(FINDs[i])
                     totalEpigraphCount += 1
                     
                     # insert into database
-                    insertCommand = "insert into Epi values (?,?,?,?,?)"
+                    insertCommand = "insert into Epi values (?,?,?,?,?,?)"
                     #print insertCommand
                     try:
-                        cur.execute(insertCommand,(str(i+1),allFilesInDirectory[x],"Unknown Author",epigraphlist[i],epigraphAuthors[i]))
+                        cur.execute(insertCommand,(str(i+1),allFilesInDirectory[x],"Unknown Author",epigraphlist[i],epigraphAuthors[i],str(FINDs[i])))
                     except sqlite3.Error,e:
                         print "Failure to insert data.","\n",e.args[0]
                     
                     db.commit()
                 
                 else:
-                    print authorlist[0] + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +epigraphAuthors[i]+"   "+ epigraphlist[i]
+                    print authorlist[0] + "    " + allFilesInDirectory[x] + "    " + str(i+1) + "   " +epigraphAuthors[i]+"   "+ epigraphlist[i]+str(FINDs[i])
                     totalEpigraphCount += 1
                     
                     # insert into database
-                    insertCommand = "insert into Epi values (?,?,?,?,?)"
+                    insertCommand = "insert into Epi values (?,?,?,?,?,?)"
                     #print insertCommand
                     try:
-                        cur.execute(insertCommand,(str(i+1),allFilesInDirectory[x],authorlist[0],epigraphlist[i],epigraphAuthors[i]))
+                        cur.execute(insertCommand,(str(i+1),allFilesInDirectory[x],authorlist[0],epigraphlist[i],epigraphAuthors[i],str(FINDs[i])))
                     except sqlite3.Error,e:
                         print "Failure to insert data.","\n",e.args[0]
                     
@@ -171,7 +174,7 @@ data = cur.execute( "SELECT * FROM Epi;")
 #del csv_writer # this will close the CSV file
 
 f = open('epigraph.csv', 'w')
-print >> f, "Number in this file, Filename, Author, Epigraph, Hypertext Attributer."
+print >> f, "Number in this file, Filename, Author, Epigraph, Hypertext Attributer, Atrribution Found"
 for row in data:
     #row = unicode(row[0])+'@'+row[1]+'@'+row[2]+'@'+row[3]+'@'+row[4]
     print >> f, row
